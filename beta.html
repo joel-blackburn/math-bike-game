@@ -998,9 +998,9 @@ function renderSetup(){
  $('#whoName').textContent='👤 '+S.name;
  $('#vehRow').innerHTML=VEHICLES.filter(v=>!v.secret||S.chicken).map(v=>`<div class="card ${S.sel.vehicle===v.id?'sel':''}" data-veh="${v.id}"><div class="em">${v.em}</div><div class="nm">${v.name}</div></div>`).join('')
   +(S.chicken?'':`<div class="card locked" data-mystery="1"><div class="em">🥚</div><div class="nm">???</div><span class="lk">Secret</span></div>`);
- $('#riderRow').innerHTML=RIDERS.map(r=>{const lk=!riderUnlocked(r);return `<div class="card ${S.sel.rider===r.id?'sel':''} ${lk?'locked':''}" data-rider="${r.id}" title="${lk?'Finish '+r.unlock+' parks to unlock':''}">
-  <div class="av" style="--skin:${r.skin};--shirt:${r.shirt};--helm:${S.sel.rider===r.id?curHelmet():r.shirt}"><i class="shirt"></i><i class="face"></i><i class="helm"></i></div><div class="nm">${r.name}</div>${lk?`<span class="lk">🔒 ${r.unlock} parks</span>`:''}</div>`;}).join('');
- const sw=(arr,key)=>arr.map((h,i)=>{const lk=!itemUnlocked(h);return `<div class="swatch ${S.sel[key]===i?'sel':''} ${lk?'locked':''}" data-${key}="${i}" style="background:${h.c}" title="${lk?'Finish '+PARKS[h.u].name+' to unlock':''}"></div>`;}).join('');
+ $('#riderRow').innerHTML=RIDERS.map(r=>{const lk=!riderUnlocked(r);return `<div class="card ${S.sel.rider===r.id?'sel':''} ${lk?'locked':''}" data-rider="${r.id}" title="${lk?(r.unlock>5?'Top secret!':'Finish '+r.unlock+' parks to unlock'):''}">
+  <div class="av" style="--skin:${r.skin};--shirt:${r.shirt};--helm:${S.sel.rider===r.id?curHelmet():r.shirt}"><i class="shirt"></i><i class="face"></i><i class="helm"></i></div><div class="nm">${r.name}</div>${lk?`<span class="lk">🔒 ${r.unlock>5?'???':r.unlock+' parks'}</span>`:''}</div>`;}).join('');
+ const sw=(arr,key)=>arr.map((h,i)=>{const lk=!itemUnlocked(h);return `<div class="swatch ${S.sel[key]===i?'sel':''} ${lk?'locked':''}" data-${key}="${i}" style="background:${h.c}" title="${lk?(PARKS[h.u].bonus?'Keep riding to unlock…':'Finish '+PARKS[h.u].name+' to unlock'):''}"></div>`;}).join('');
  $('#helmetRow').innerHTML=sw(HELMETS,'helmet');$('#paintRow').innerHTML=sw(PAINTS,'paint');
  $('#diffRow').innerHTML=Object.entries(DIFFS).map(([k,d])=>`<div class="card ${S.sel.diff===k?'sel':''}" data-diff="${k}"><div class="em">${d.em}</div><div><div class="nm">${d.name}</div><div class="ds">${d.ds}</div></div></div>`).join('');
 }
@@ -1065,11 +1065,12 @@ function parkUnlocked(i){return i===0||S.prog[S.sel.diff].stars[i-1]>0;}
 function renderMap(){
  const pr=S.prog[S.sel.diff],d=DIFFS[S.sel.diff];
  $('#mapDiff').textContent=`👤 ${S.name} · ${d.em} ${d.name}`;
- $('#parkList').innerHTML=PARKS.map((p,i)=>{const lk=!parkUnlocked(i),st=pr.stars[i];
+ const vis=i=>!PARKS[i].bonus||parkUnlocked(i);
+ $('#parkList').innerHTML=PARKS.map((p,i)=>{const lk=!parkUnlocked(i),st=pr.stars[i];if(!vis(i))return '';
   return `<div class="park ${lk?'locked':''}" data-park="${i}" style="background:${p.css}">${p.bonus?'<div class="ribbon">BONUS</div>':''}<div class="num">PARK ${i+1}</div><div class="em">${p.em}</div><div class="nm">${p.name}</div>
-  <div class="st">${[0,1,2].map(k=>k<st?'⭐':'<span style="opacity:.35;filter:grayscale(1)">⭐</span>').join('')}</div><div class="bs">${pr.best[i]?'Best '+pr.best[i].toLocaleString():(lk?(i===5?'Finish parks 1–5':'Locked'):'Not ridden yet')}</div></div>`;}).join('');
+  <div class="st">${[0,1,2].map(k=>k<st?'⭐':'<span style="opacity:.35;filter:grayscale(1)">⭐</span>').join('')}</div><div class="bs">${pr.best[i]?'Best '+pr.best[i].toLocaleString():(lk?'Locked':'Not ridden yet')}</div></div>`;}).join('');
  const tot=pr.stars.reduce((a,b)=>a+b,0),bs=pr.best.reduce((a,b)=>a+b,0);
- $('#mapFoot').textContent=`⭐ ${tot} / ${NP*3} stars on ${d.name}   •   🏆 Total best score ${bs.toLocaleString()}`;
+ $('#mapFoot').textContent=`⭐ ${tot} / ${PARKS.filter((p,i)=>vis(i)).length*3} stars on ${d.name}   •   🏆 Total best score ${bs.toLocaleString()}`;
 }
 $('#parkList').addEventListener('click',e=>{const t=e.target.closest('[data-park]');if(!t)return;const i=+t.dataset.park;if(!parkUnlocked(i)){sfx('wrong');return;}sfx('click');startLevel(i);});
 
